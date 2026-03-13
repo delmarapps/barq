@@ -1,0 +1,251 @@
+// ─── BARQ DATABASE SCHEMA ────────────────────────────────────────────
+// PostgreSQL + Prisma ORM
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────
+
+enum Gender {
+  male
+  female
+  other
+  prefer_not_to_say
+}
+
+enum Language {
+  EN
+  AR
+}
+
+enum ActivityType {
+  walking
+  running
+  cycling
+  strength
+  yoga
+  swimming
+  other
+}
+
+enum GoalType {
+  weight_loss
+  build_strength
+  better_sleep
+  less_stress
+  more_active
+}
+
+enum NotificationType {
+  recovery
+  activity
+  sleep
+  challenge
+  system
+}
+
+enum HrZoneName {
+  rest
+  easy
+  aerobic
+  threshold
+  max
+}
+
+// ─── USERS ───────────────────────────────────────────────────────────
+
+model User {
+  id                  String   @id @default(uuid())
+  email               String   @unique
+  passwordHash        String   @map("password_hash")
+  fullName            String   @map("full_name")
+  fullNameAr          String?  @map("full_name_ar")
+  dateOfBirth         DateTime? @map("date_of_birth")
+  gender              Gender?
+  weightKg            Float?   @map("weight_kg")
+  heightCm            Float?   @map("height_cm")
+  languagePreference  Language @default(EN) @map("language_preference")
+  avatarUrl           String?  @map("avatar_url")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  devices             Device[]
+  wellnessScores      WellnessScore[]
+  recoveryMetrics     RecoveryMetric[]
+  sleepSessions       SleepSession[]
+  activitySessions    ActivitySession[]
+  goals               Goal[]
+  notifications       Notification[]
+  refreshTokens       RefreshToken[]
+
+  @@map("users")
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─── DEVICES ─────────────────────────────────────────────────────────
+
+model Device {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  deviceName      String    @map("device_name")
+  deviceSerial    String?   @map("device_serial")
+  firmwareVersion String?   @map("firmware_version")
+  batteryLevel    Int?      @map("battery_level")
+  isActive        Boolean   @default(true) @map("is_active")
+  lastSyncedAt    DateTime? @map("last_synced_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("devices")
+}
+
+// ─── WELLNESS SCORES ─────────────────────────────────────────────────
+
+model WellnessScore {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  date            DateTime @db.Date
+  overallScore    Float    @map("overall_score")
+  recoveryScore   Float    @map("recovery_score")
+  strainScore     Float    @map("strain_score")
+  sleepScore      Float    @map("sleep_score")
+  recommendation  String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("wellness_scores")
+}
+
+// ─── RECOVERY METRICS ────────────────────────────────────────────────
+
+model RecoveryMetric {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  recordedAt          DateTime @map("recorded_at")
+  recoveryScore       Float    @map("recovery_score")
+  hrvMs               Float?   @map("hrv_ms")
+  restingHrBpm        Int?     @map("resting_hr_bpm")
+  skinTempDeviation   Float?   @map("skin_temp_deviation")
+  bloodOxygenPct      Float?   @map("blood_oxygen_pct")
+  respiratoryRate     Float?   @map("respiratory_rate")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("recovery_metrics")
+}
+
+// ─── SLEEP SESSIONS ──────────────────────────────────────────────────
+
+model SleepSession {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  sleepStart          DateTime @map("sleep_start")
+  sleepEnd            DateTime @map("sleep_end")
+  totalMinutes        Int      @map("total_minutes")
+  awakeMinutes        Int      @default(0) @map("awake_minutes")
+  lightMinutes        Int      @default(0) @map("light_minutes")
+  deepMinutes         Int      @default(0) @map("deep_minutes")
+  remMinutes          Int      @default(0) @map("rem_minutes")
+  sleepScore          Float    @map("sleep_score")
+  sleepPerformancePct Float?   @map("sleep_performance_pct")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sleep_sessions")
+}
+
+// ─── ACTIVITY SESSIONS ───────────────────────────────────────────────
+
+model ActivitySession {
+  id              String       @id @default(uuid())
+  userId          String       @map("user_id")
+  activityType    ActivityType @map("activity_type")
+  startedAt       DateTime     @map("started_at")
+  endedAt         DateTime?    @map("ended_at")
+  durationMinutes Int?         @map("duration_minutes")
+  strainPoints    Float?       @map("strain_points")
+  avgHrBpm        Int?         @map("avg_hr_bpm")
+  maxHrBpm        Int?         @map("max_hr_bpm")
+  caloriesBurned  Int?         @map("calories_burned")
+  steps           Int?
+  notes           String?
+  isActive        Boolean      @default(true) @map("is_active")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hrZones         HrZone[]
+
+  @@map("activity_sessions")
+}
+
+model HrZone {
+  id              String          @id @default(uuid())
+  sessionId       String          @map("session_id")
+  zoneName        HrZoneName      @map("zone_name")
+  minutesInZone   Int             @map("minutes_in_zone")
+  percentage      Float
+
+  session         ActivitySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("hr_zones")
+}
+
+// ─── GOALS ───────────────────────────────────────────────────────────
+
+model Goal {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  goalType    GoalType @map("goal_type")
+  isActive    Boolean  @default(true) @map("is_active")
+  targetValue Float?   @map("target_value")
+  unit        String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  titleEn   String           @map("title_en")
+  titleAr   String           @map("title_ar")
+  bodyEn    String           @map("body_en")
+  bodyAr    String           @map("body_ar")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

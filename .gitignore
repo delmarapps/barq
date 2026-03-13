@@ -1,0 +1,25 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Tool / IDE state
+.claude/
+.expo/
+
+# Node
+node_modules/
+dist/
+
+# Expo / React Native
+mobile/node_modules/
+mobile/.expo/
+mobile/android/app/build/
+mobile/android/build/
+mobile/android/app/hs_err_pid*.log
+mobile/android/app/replay_pid*.log
+mobile/android/hs_err_pid*.log
+mobile/android/replay_pid*.log
+
+# Disabled stubs
+*.disabled
