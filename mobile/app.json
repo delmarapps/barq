@@ -19,7 +19,7 @@
       "package": "com.barq.wellness",
       "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#040406" },
       "permissions": ["android.permission.USE_BIOMETRIC","android.permission.ACTIVITY_RECOGNITION"],
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": false
     },
     "plugins": ["expo-router","expo-secure-store",
       ["expo-local-authentication", { "faceIDPermission": "Allow BARQ to use Face ID." }]
@@ -27,8 +27,8 @@
     "experiments": { "typedRoutes": true },
     "extra": {
       "eas": { "projectId": "bf1e6702-8b96-4b26-8164-47c84250dd29" },
-      "apiUrl": "http://192.168.33.68:3000/api/v1",
-      "wsUrl":  "http://192.168.33.68:3000"
+      "apiUrl": "https://cooler-mining-walls-matters.trycloudflare.com/api/v1",
+      "wsUrl":  "https://cooler-mining-walls-matters.trycloudflare.com"
     }
   }
 }
