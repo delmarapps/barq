@@ -3,6 +3,7 @@ import { ScrollView, View, Text, StyleSheet, TouchableOpacity, RefreshControl } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import Svg, { Circle } from 'react-native-svg';
+import { Pedometer } from 'expo-sensors';
 import { useTodayActivities, useStartActivity, useEndActivity } from '../../src/hooks/useData';
 import { C } from '../../src/constants/colors';
 
@@ -34,27 +35,51 @@ export default function StrainScreen() {
   const startMutation = useStartActivity();
   const endMutation   = useEndActivity();
 
-  const [elapsed, setElapsed] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [elapsed,   setElapsed]   = useState(0);
+  const [stepCount, setStepCount] = useState(0);
+  const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pedometerRef = useRef<{ remove: () => void } | null>(null);
   const activeSession = data?.activeSession;
 
   useEffect(() => {
     if (activeSession) {
+      // Timer
       const started = new Date(activeSession.startedAt).getTime();
       setElapsed(Math.round((Date.now() - started) / 1000));
       timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
+
+      // Real step counting via device pedometer
+      setStepCount(0);
+      Pedometer.isAvailableAsync().then(available => {
+        if (available) {
+          pedometerRef.current = Pedometer.watchStepCount(result => {
+            setStepCount(result.steps);
+          });
+        }
+      });
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (pedometerRef.current) { pedometerRef.current.remove(); pedometerRef.current = null; }
       setElapsed(0);
+      setStepCount(0);
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (pedometerRef.current) { pedometerRef.current.remove(); pedometerRef.current = null; }
+    };
   }, [activeSession?.id]);
 
   const handleToggle = async () => {
     if (activeSession) {
       const calories = Math.round(elapsed * 0.25);
-      await endMutation.mutateAsync({ id: activeSession.id, data: { caloriesBurned: calories, avgHrBpm: 125 } });
+      // Send real step count to backend (avg step = 0.762m)
+      await endMutation.mutateAsync({
+        id: activeSession.id,
+        data: { caloriesBurned: calories, avgHrBpm: 125, steps: stepCount },
+      });
+      setStepCount(0);
     } else {
+      setStepCount(0);
       await startMutation.mutateAsync('walking');
     }
   };
@@ -117,9 +142,9 @@ export default function StrainScreen() {
           {activeSession && (
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
               {[
-                { label: 'Heart Rate', val: '128', unit: 'bpm' },
-                { label: 'Calories',   val: String(Math.round(elapsed * 0.25)), unit: 'cal' },
-                { label: 'Duration',   val: String(Math.floor(elapsed/60)), unit: 'min' },
+                { label: 'Steps',    val: String(stepCount), unit: 'steps' },
+                { label: 'Distance', val: (stepCount * 0.000762).toFixed(2), unit: 'km' },
+                { label: 'Duration', val: String(Math.floor(elapsed / 60)), unit: 'min' },
               ].map(m => (
                 <View key={m.label} style={{ flex: 1, backgroundColor: C.lift, borderRadius: 12, padding: 10, alignItems: 'center' }}>
                   <Text style={{ color: C.white, fontSize: 18, fontWeight: '800' }}>{m.val}</Text>
@@ -150,7 +175,7 @@ export default function StrainScreen() {
                     {a.activityType.charAt(0).toUpperCase() + a.activityType.slice(1)}
                   </Text>
                   <Text style={{ color: C.muted, fontSize: 11 }}>
-                    ⏱ {a.durationMinutes}m  🔥 {a.caloriesBurned ?? '--'} cal
+                    ⏱ {a.durationMinutes} min  🔥 {a.caloriesBurned ?? '--'} cal  👟 {a.steps ?? '--'} steps
                   </Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>

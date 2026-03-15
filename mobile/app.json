@@ -6,7 +6,11 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "scheme": "barq",
-    "splash": { "image": "./assets/splash.png", "backgroundColor": "#040406", "resizeMode": "contain" },
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#040406",
+      "resizeMode": "contain"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.barq.wellness",
@@ -17,18 +21,42 @@
     },
     "android": {
       "package": "com.barq.wellness",
-      "adaptiveIcon": { "foregroundImage": "./assets/adaptive-icon.png", "backgroundColor": "#040406" },
-      "permissions": ["android.permission.USE_BIOMETRIC","android.permission.ACTIVITY_RECOGNITION"],
-      "usesCleartextTraffic": false
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#040406"
+      },
+      "permissions": [
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.ACTIVITY_RECOGNITION"
+      ]
     },
-    "plugins": ["expo-router","expo-secure-store",
-      ["expo-local-authentication", { "faceIDPermission": "Allow BARQ to use Face ID." }]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow BARQ to use Face ID."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": true },
+    "experiments": {
+      "typedRoutes": true
+    },
     "extra": {
-      "eas": { "projectId": "bf1e6702-8b96-4b26-8164-47c84250dd29" },
-      "apiUrl": "https://cooler-mining-walls-matters.trycloudflare.com/api/v1",
-      "wsUrl":  "https://cooler-mining-walls-matters.trycloudflare.com"
+      "eas": {
+        "projectId": "bf1e6702-8b96-4b26-8164-47c84250dd29"
+      },
+      "apiUrl": "http://192.168.1.34:3000/api/v1",
+      "wsUrl": "http://192.168.1.34:3000"
     }
   }
 }

@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import { useAuthStore } from '../../src/stores/authStore';
 import { C } from '../../src/constants/colors';
 
@@ -15,21 +16,44 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      await login(email.trim().toLowerCase(), password);
+      const trimmedEmail = email.trim().toLowerCase();
+      await login(trimmedEmail, password);
+      // Save credentials so biometric login can use them later
+      await SecureStore.setItemAsync('biometric_email', trimmedEmail);
+      await SecureStore.setItemAsync('biometric_password', password);
       router.replace('/(tabs)');
     } catch {}
   };
 
   const handleBiometric = async () => {
+    // 1. Check hardware support
     const compatible = await LocalAuthentication.hasHardwareAsync();
-    if (!compatible) return Alert.alert('Not supported', 'Biometric auth not available.');
+    if (!compatible) return Alert.alert('Not supported', 'Biometric auth not available on this device.');
+
+    // 2. Check biometrics are enrolled (fingerprint/face set up)
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    if (!enrolled) return Alert.alert('Not set up', 'No fingerprint or face ID is enrolled. Please set up biometrics in device Settings first.');
+
+    // 3. Check we have saved credentials from a previous login
+    const savedEmail    = await SecureStore.getItemAsync('biometric_email');
+    const savedPassword = await SecureStore.getItemAsync('biometric_password');
+    if (!savedEmail || !savedPassword) {
+      return Alert.alert('Sign in required', 'Please sign in with your email and password once first to enable biometric login.');
+    }
+
+    // 4. Prompt biometric scan
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Login to BARQ',
       fallbackLabel: 'Use password',
     });
+
     if (result.success) {
-      // In real app: retrieve stored credentials from SecureStore
-      await handleLogin();
+      try {
+        await login(savedEmail, savedPassword);
+        router.replace('/(tabs)');
+      } catch {
+        Alert.alert('Login failed', 'Biometric verified but login failed. Please sign in with your password.');
+      }
     }
   };
 

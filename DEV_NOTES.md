@@ -5,9 +5,16 @@
    Run `ipconfig` (Windows) or `ifconfig` (Mac/Linux) to find your current LAN IP.
 
 ## Local (same WiFi)
+⚠️  usesCleartextTraffic MUST remain true in app.json — all local API/WS URLs use HTTP.
+   Setting it to false will silently block every network request on Android.
+
+### Current IP (active)
+apiUrl: http://192.168.1.34:3000/api/v1
+wsUrl:  http://192.168.1.34:3000
+
+### Previous IPs (for reference)
 apiUrl: http://192.168.33.68:3000/api/v1
 wsUrl:  http://192.168.33.68:3000
-NOTE: Requires usesCleartextTraffic: true in app.json + AndroidManifest.xml
 
 ## Tunnel (Cloudflare) — CURRENTLY ACTIVE
 apiUrl: https://cooler-mining-walls-matters.trycloudflare.com/api/v1
