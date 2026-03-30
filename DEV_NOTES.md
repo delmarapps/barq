@@ -17,7 +17,16 @@ apiUrl: http://192.168.33.68:3000/api/v1
 wsUrl:  http://192.168.33.68:3000
 
 ## Tunnel (Cloudflare) — CURRENTLY ACTIVE
-apiUrl: https://cooler-mining-walls-matters.trycloudflare.com/api/v1
-wsUrl:  https://cooler-mining-walls-matters.trycloudflare.com
+apiUrl: https://interest-witch-thesis-jvc.trycloudflare.com/api/v1
+wsUrl:  https://interest-witch-thesis-jvc.trycloudflare.com
+
+### Previous tunnels (for reference — these are temporary URLs that expire)
+- https://internet-alpine-directive-administration.trycloudflare.com (expired)
+- https://cooler-mining-walls-matters.trycloudflare.com (expired)
+
+⚠️  Quick tunnel URLs change every restart. For a permanent URL, set up a named tunnel:
+   1. Run: cloudflared tunnel login
+   2. Run: cloudflared tunnel create barq
+   Then update app.json and rebuild the APK with the fixed URL.
 
 ## To switch: update the "extra" block in mobile/app.json, then rebuild the APK

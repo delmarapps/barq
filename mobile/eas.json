@@ -9,6 +9,10 @@
         "buildType": "apk",
         "image": "ubuntu-22.04-jdk-17-ndk-r26b"
       },
+      "ios": {
+        "simulator": false,
+        "distribution": "store"
+      },
       "env": {
         "EAS_NO_VCS": "1"
       }
