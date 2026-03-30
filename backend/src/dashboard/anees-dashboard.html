@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Anees – لوحة المراقبة التجريبية</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --red:      #f85149;
+      --green:    #3fb950;
+      --yellow:   #d29922;
+      --blue:     #388bfd;
+      --radius:   10px;
+      --gap:      16px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: var(--gap);
+    }
+
+    /* ── Demo badge ───────────────────────────────────────────────── */
+    .demo-badge {
+      display: inline-block;
+      background: var(--yellow);
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+      margin-inline-start: 8px;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    #connection-status {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    #connection-status span {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--yellow);
+      margin-inline-end: 6px;
+      vertical-align: middle;
+    }
+
+    #connection-status.live span   { background: var(--green); }
+    #connection-status.error span  { background: var(--red); }
+
+    /* ── Fall alert banner ────────────────────────────────────────── */
+    #fall-banner {
+      display: none;
+      background: var(--red);
+      color: #fff;
+      text-align: center;
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: var(--gap);
+      animation: pulse-bg 1s infinite;
+    }
+
+    @keyframes pulse-bg {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.7; }
+    }
+
+    /* ── Grid layout ──────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--gap);
+      margin-bottom: 28px;
+    }
+
+    /* ── Card ─────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .card h2 {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Device card ──────────────────────────────────────────────── */
+    .device-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .device-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .device-id {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+
+    .badge.online  { background: #1a4731; color: var(--green); }
+    .badge.offline { background: #3d1515; color: var(--red); }
+    .badge.present { background: #1a3a5c; color: var(--blue); }
+    .badge.absent  { background: #2a2a2a; color: var(--muted); }
+    .badge.fall    { background: var(--red); color: #fff; animation: pulse-bg 1s infinite; }
+
+    .device-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Event feed ───────────────────────────────────────────────── */
+    #event-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .event-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .event-item.fall-event {
+      border-color: var(--red);
+      background: #1a0a0a;
+    }
+
+    .event-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .event-body {
+      flex: 1;
+    }
+
+    .event-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .event-meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .event-pos {
+      font-size: 12px;
+      color: var(--blue);
+      margin-top: 4px;
+    }
+
+    .resolve-btn {
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+
+    .resolve-btn:hover    { opacity: 0.8; }
+    .resolve-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .resolved-tag {
+      display: inline-block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* ── Section header ───────────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .section-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .section-header .refresh-hint {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ── Empty state ──────────────────────────────────────────────── */
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px;
+      font-size: 14px;
+    }
+
+    /* ── Spinner ──────────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header>
+    <h1>
+      🛡️ أنيس — مراقبة الكشف عن السقوط
+      <span class="demo-badge">DEMO</span>
+    </h1>
+    <div id="connection-status">
+      <span></span>
+      جارٍ التحميل…
+    </div>
+  </header>
+
+  <!-- ── Fall alert banner (shown when there is an unresolved fall) ─ -->
+  <div id="fall-banner">
+    🚨 تنبيه: تم رصد حالة سقوط! يرجى التحقق فوراً
+  </div>
+
+  <!-- ── Device status cards ────────────────────────────────────── -->
+  <div class="section-header">
+    <h2>حالة الأجهزة</h2>
+    <span class="refresh-hint">يتحدث كل 5 ثوانٍ</span>
+  </div>
+  <div class="grid" id="devices-grid">
+    <div class="empty"><span class="spinner"></span> جارٍ تحميل الأجهزة…</div>
+  </div>
+
+  <!-- ── Live event feed ────────────────────────────────────────── -->
+  <div class="section-header">
+    <h2>سجل الأحداث الحية</h2>
+    <span class="refresh-hint">آخر 50 حدث</span>
+  </div>
+  <div id="event-feed">
+    <div class="empty"><span class="spinner"></span> جارٍ تحميل الأحداث…</div>
+  </div>
+
+  <footer>
+    Anees Demo Dashboard — لوحة تجريبية داخلية · ليست للإنتاج
+  </footer>
+
+  <script>
+    // ── Config ─────────────────────────────────────────────────────────────
+    // API base URL. Adjust if the backend runs on a different host/port.
+    const API = '';  // empty = same origin
+
+    let pollTimer = null;
+    let resolving = new Set();   // event IDs currently being resolved (prevent double-click)
+
+    // ── Status indicator ───────────────────────────────────────────────────
+    function setStatus(state, text) {
+      const el = document.getElementById('connection-status');
+      el.className = state;
+      el.innerHTML = '<span></span>' + text;
+    }
+
+    // ── Fall banner ────────────────────────────────────────────────────────
+    function updateFallBanner(events) {
+      const banner = document.getElementById('fall-banner');
+      const hasActiveFall = events.some(e => e.eventType === 'fall' && !e.resolved);
+      banner.style.display = hasActiveFall ? 'block' : 'none';
+    }
+
+    // ── Device status cards ────────────────────────────────────────────────
+    function renderDevices(devices) {
+      const grid = document.getElementById('devices-grid');
+      if (!devices || devices.length === 0) {
+        grid.innerHTML = '<div class="empty">لا توجد أجهزة مسجّلة بعد</div>';
+        return;
+      }
+      grid.innerHTML = devices.map(d => {
+        const onlineBadge = d.isOnline
+          ? '<span class="badge online">متصل ✓</span>'
+          : '<span class="badge offline">غير متصل ✗</span>';
+
+        const presenceBadge = d.someonePresent
+          ? '<span class="badge present">شخص موجود</span>'
+          : '<span class="badge absent">لا أحد</span>';
+
+        const fallBadge = d.activeFallId
+          ? '<span class="badge fall">⚠ سقوط نشط</span>'
+          : '';
+
+        const lastSeen = d.lastSeenAt
+          ? 'آخر رصد: ' + formatTime(d.lastSeenAt)
+          : 'لا توجد بيانات';
+
+        return `
+          <div class="card device-card">
+            <div class="device-header">
+              <span class="device-id">${escapeHtml(d.deviceId)}</span>
+              ${onlineBadge}
+            </div>
+            <div>
+              ${presenceBadge}
+              ${fallBadge}
+            </div>
+            <div class="device-meta">${lastSeen}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Event feed ─────────────────────────────────────────────────────────
+    function renderEvents(events) {
+      const feed = document.getElementById('event-feed');
+      if (!events || events.length === 0) {
+        feed.innerHTML = '<div class="empty">لا توجد أحداث بعد</div>';
+        return;
+      }
+      feed.innerHTML = events.map(e => renderEventItem(e)).join('');
+    }
+
+    function renderEventItem(e) {
+      const isFall = e.eventType === 'fall';
+      const icon = { fall: '🚨', presence: '👤', heartbeat: '💓', offline: '🔴' }[e.eventType] || '📡';
+      const label = { fall: 'سقوط مكتشف', presence: 'تغيّر الوجود', heartbeat: 'قلب النبض شاذ', offline: 'الجهاز غير متصل' }[e.eventType] || e.eventType;
+
+      const payload = e.payload || {};
+
+      const posInfo = (payload.posX !== undefined && payload.posY !== undefined)
+        ? `<div class="event-pos">الموقع: X=${payload.posX} Y=${payload.posY}</div>`
+        : '';
+
+      const presenceInfo = payload.someoneExists !== undefined
+        ? `<div class="event-meta" style="color:var(--blue)">الحالة: ${payload.someoneExists === '1' ? 'شخص موجود' : 'لا أحد'}</div>`
+        : '';
+
+      let actionHtml = '';
+      if (isFall) {
+        if (e.resolved) {
+          actionHtml = '<span class="resolved-tag">✓ تمت المعالجة</span>';
+        } else {
+          actionHtml = `<button class="resolve-btn" onclick="resolveAlert('${escapeHtml(e.id)}')" id="btn-${escapeHtml(e.id)}">تم التحقق — وضع آمن</button>`;
+        }
+      }
+
+      return `
+        <div class="event-item ${isFall && !e.resolved ? 'fall-event' : ''}" id="event-${escapeHtml(e.id)}">
+          <div class="event-icon">${icon}</div>
+          <div class="event-body">
+            <div class="event-title">${label}</div>
+            <div class="event-meta">الجهاز: ${escapeHtml(e.deviceId)} · ${formatTime(e.timestamp)}</div>
+            ${posInfo}
+            ${presenceInfo}
+            ${actionHtml}
+          </div>
+        </div>`;
+    }
+
+    // ── Resolve a fall alert ───────────────────────────────────────────────
+    async function resolveAlert(id) {
+      if (resolving.has(id)) return;
+      resolving.add(id);
+
+      const btn = document.getElementById('btn-' + id);
+      if (btn) { btn.disabled = true; btn.textContent = 'جارٍ الحفظ…'; }
+
+      try {
+        const res = await fetch(API + '/api/v1/anees/events/' + id + '/resolve', { method: 'PATCH' });
+        if (!res.ok) throw new Error('Server error');
+        // Refresh data immediately after resolution.
+        await fetchAll();
+      } catch (err) {
+        alert('فشل تحديث الحالة. يرجى المحاولة مرة أخرى.');
+        if (btn) { btn.disabled = false; btn.textContent = 'تم التحقق — وضع آمن'; }
+      } finally {
+        resolving.delete(id);
+      }
+    }
+
+    // ── Fetch all data ─────────────────────────────────────────────────────
+    async function fetchAll() {
+      try {
+        const [eventsRes, devicesRes] = await Promise.all([
+          fetch(API + '/api/v1/anees/events?limit=50'),
+          fetch(API + '/api/v1/anees/devices'),
+        ]);
+
+        if (!eventsRes.ok || !devicesRes.ok) throw new Error('API error');
+
+        const eventsData  = await eventsRes.json();
+        const devicesData = await devicesRes.json();
+
+        renderEvents(eventsData.events || []);
+        renderDevices(devicesData.devices || []);
+        updateFallBanner(eventsData.events || []);
+
+        setStatus('live', 'مباشر — آخر تحديث: ' + formatTime(new Date().toISOString()));
+      } catch (err) {
+        setStatus('error', 'خطأ في الاتصال بالخادم');
+      }
+    }
+
+    // ── Start polling ──────────────────────────────────────────────────────
+    function startPolling() {
+      fetchAll(); // immediate first load
+      pollTimer = setInterval(fetchAll, 5000);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function formatTime(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString('ar-SA', { dateStyle: 'short' }) + ' ' +
+             d.toLocaleTimeString('ar-SA', { timeStyle: 'medium', hour12: false });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // ── Boot ───────────────────────────────────────────────────────────────
+    setStatus('', 'جارٍ الاتصال…');
+    startPolling();
+  </script>
+</body>
+</html>

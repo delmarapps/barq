@@ -23,6 +23,7 @@
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
+    "mqtt": "^5.15.1",
     "socket.io": "^4.7.5",
     "uuid": "^10.0.0",
     "winston": "^3.13.0"

@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -17,7 +18,9 @@ import sleepRoutes       from './routes/sleep.routes';
 import activityRoutes    from './routes/activity.routes';
 import goalRoutes        from './routes/goal.routes';
 import notificationRoutes from './routes/notification.routes';
+import aneesRoutes        from './routes/anees.routes';
 import { setupSocketIO }  from './services/socket.service';
+import { initMqtt }       from './services/mqtt.service';
 import { errorHandler }   from './middleware/error.middleware';
 import { authenticate }   from './middleware/auth.middleware';
 
@@ -33,6 +36,13 @@ const io = new SocketServer(server, {
 });
 setupSocketIO(io);
 app.set('io', io);
+
+// ─── Anees Dashboard (served BEFORE helmet so inline scripts are allowed) ─────
+// This is an internal demo tool — not a production page — so relaxed CSP is
+// acceptable. Move behind authenticate() and tighten CSP before going live.
+app.get('/anees-dashboard', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard', 'anees-dashboard.html'));
+});
 
 // ─── Security Middleware ──────────────────────────────
 app.use(helmet());
@@ -68,6 +78,8 @@ app.use('/api/v1/sleep',         authenticate, sleepRoutes);
 app.use('/api/v1/activity',      authenticate, activityRoutes);
 app.use('/api/v1/goals',         authenticate, goalRoutes);
 app.use('/api/v1/notifications', authenticate, notificationRoutes);
+// Anees radar API — public for the internal demo dashboard (no auth required).
+app.use('/api/v1/anees',         aneesRoutes);
 
 // ─── 404 ──────────────────────────────────────────────
 app.use('*', (_, res) => {
@@ -81,6 +93,12 @@ app.use(errorHandler);
 server.listen(PORT, () => {
   logger.info(`🚀 BARQ API running on port ${PORT}`);
   logger.info(`📍 Health: http://localhost:${PORT}/api/health`);
+  logger.info(`📊 Anees Dashboard: http://localhost:${PORT}/anees-dashboard`);
+
+  // Initialise MQTT after the HTTP server is up.
+  // Uses a small delay so the server is fully ready before adding subscribers.
+  // initMqtt is non-blocking — MQTT failures will NOT crash the HTTP server.
+  setImmediate(() => initMqtt(io));
 });
 
 export { app, server };

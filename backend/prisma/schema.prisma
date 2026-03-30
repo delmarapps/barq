@@ -232,6 +232,21 @@ model Goal {
   @@map("goals")
 }
 
+// ─── ANEES — RADAR EVENT LOG ─────────────────────────────────────────
+// Stores every meaningful event received from Radar60FL fall-detection devices.
+// eventType is one of: fall | presence | heartbeat | offline
+
+model RadarEvent {
+  id        String   @id @default(uuid())
+  deviceId  String   @map("device_id")
+  eventType String   @map("event_type")   // "fall" | "presence" | "heartbeat" | "offline"
+  payload   Json                           // raw `params` object from the MQTT message
+  timestamp DateTime @default(now())
+  resolved  Boolean  @default(false)       // used for fall alerts — set true once someone checks on the person
+
+  @@map("radar_events")
+}
+
 // ─── NOTIFICATIONS ───────────────────────────────────────────────────
 
 model Notification {
