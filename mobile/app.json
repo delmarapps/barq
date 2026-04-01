@@ -56,8 +56,8 @@
       "eas": {
         "projectId": "bf1e6702-8b96-4b26-8164-47c84250dd29"
       },
-      "apiUrl": "https://interest-witch-thesis-jvc.trycloudflare.com/api/v1",
-      "wsUrl": "https://interest-witch-thesis-jvc.trycloudflare.com"
+      "apiUrl": "http://192.168.1.155:3000/api/v1",
+      "wsUrl": "http://192.168.1.155:3000"
     }
   }
 }
