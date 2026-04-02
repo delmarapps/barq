@@ -6,6 +6,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Pedometer } from 'expo-sensors';
 import { useTodayActivities, useStartActivity, useEndActivity } from '../../src/hooks/useData';
 import { C } from '../../src/constants/colors';
+import { connectAndRead, disconnectBand } from '../../src/services/BandService';
 
 function Ring({ value, max = 21, size = 96, stroke = 9, color = C.strain, children }: any) {
   const r = (size - stroke) / 2, circ = 2 * Math.PI * r;
@@ -35,8 +36,11 @@ export default function StrainScreen() {
   const startMutation = useStartActivity();
   const endMutation   = useEndActivity();
 
-  const [elapsed,   setElapsed]   = useState(0);
-  const [stepCount, setStepCount] = useState(0);
+  const [elapsed,    setElapsed]    = useState(0);
+  const [stepCount,  setStepCount]  = useState(0);
+  const [heartRate,  setHeartRate]  = useState<number | null>(null);
+  const [battery,    setBattery]    = useState<number | null>(null);
+  const [bandStatus, setBandStatus] = useState<string>('--');
   const timerRef     = useRef<ReturnType<typeof setInterval> | null>(null);
   const pedometerRef = useRef<{ remove: () => void } | null>(null);
   const activeSession = data?.activeSession;
@@ -68,6 +72,18 @@ export default function StrainScreen() {
       if (pedometerRef.current) { pedometerRef.current.remove(); pedometerRef.current = null; }
     };
   }, [activeSession?.id]);
+
+  // BLE band connection — runs once on mount
+  useEffect(() => {
+    connectAndRead(
+      (status) => setBandStatus(status),
+      (reading) => {
+        if (reading.heartRate != null) setHeartRate(reading.heartRate);
+        if (reading.battery   != null) setBattery(reading.battery);
+      },
+    ).catch((e) => setBandStatus(`ERR: ${e?.message}`));
+    return () => { disconnectBand(); };
+  }, []);
 
   const handleToggle = async () => {
     if (activeSession) {
@@ -135,8 +151,11 @@ export default function StrainScreen() {
         <View style={[s.card, activeSession && { backgroundColor: '#180c07', borderColor: C.strain + '30' }]}>
           <Text style={s.label}>{t('liveActivity')}</Text>
           <Text style={[s.timer, { color: activeSession ? C.strain : C.muted }]}>{fmt(elapsed)}</Text>
-          <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginBottom: 14 }}>
+          <Text style={{ color: C.muted, fontSize: 11, textAlign: 'center', marginBottom: 4 }}>
             {activeSession ? t('pauseSession').replace('⏸  ','') : t('startNewActivity')}
+          </Text>
+          <Text style={{ color: C.muted, fontSize: 10, textAlign: 'center', marginBottom: 10 }}>
+            Band: {bandStatus}{battery != null ? `  · ${battery}%` : ''}
           </Text>
 
           {activeSession && (
@@ -144,7 +163,7 @@ export default function StrainScreen() {
               {[
                 { label: 'Steps',    val: String(stepCount), unit: 'steps' },
                 { label: 'Distance', val: (stepCount * 0.000762).toFixed(2), unit: 'km' },
-                { label: 'Duration', val: String(Math.floor(elapsed / 60)), unit: 'min' },
+                { label: 'Heart',    val: heartRate != null ? String(heartRate) : '--', unit: 'bpm' },
               ].map(m => (
                 <View key={m.label} style={{ flex: 1, backgroundColor: C.lift, borderRadius: 12, padding: 10, alignItems: 'center' }}>
                   <Text style={{ color: C.white, fontSize: 18, fontWeight: '800' }}>{m.val}</Text>
